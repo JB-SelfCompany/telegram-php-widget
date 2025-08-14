@@ -1,9 +1,6 @@
 # 💬 Telegram PHP Widget  
 
-[![License: MIT](https://img.shields.io/badge/License-GPLV3-green.svg)](#)  
-[![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue)](#)  
-[![Open Source Love](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red.svg)](#)  
-[![Telegram](https://img.shields.io/badge/Telegram-Bot-blue?logo=telegram)](#)  
+[![License: MIT](https://img.shields.io/badge/License-GPLV3-green.svg)](#) [![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue)](#) [![Open Source Love](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red.svg)](#) [![Telegram](https://img.shields.io/badge/Telegram-Bot-blue?logo=telegram)](#)
 
 **Бесплатный виджет чата с Telegram для вашего сайта**  
 Лёгкий, быстрый и полностью открытый проект, который позволит интегрировать чат с посетителями вашего сайта через Telegram. Работает на PHP и Telegram Bot API, поддерживает SQLite для хранения данных и легко устанавливается на любой хостинг.
@@ -41,7 +38,7 @@
 1. В браузере откройте:
 https://ваш-домен/widget/install/setup.php
 
-2. Следуйте пошаговым инструкциям на экране — мастер создаст базу данных и настроит конфигурацию  
+2. Следуйте пошаговым инструкциям на экране — мастер самостоятельно настроит конфигурацию
 
 ---
 
