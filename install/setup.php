@@ -125,35 +125,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 				throw new Exception('Не удается записать файл конфигурации');
 			}
             
-            // Устанавливаем webhook
-            $webhookData = [
-                'url' => $webhookUrl,
-                'max_connections' => 40,
-                'allowed_updates' => ['message']
-            ];
-            
-            $webhookContext = stream_context_create([
-                'http' => [
-                    'method' => 'POST',
-                    'header' => 'Content-Type: application/json',
-                    'content' => json_encode($webhookData),
-                    'timeout' => 10
-                ]
-            ]);
-            
-            $webhookResult = @file_get_contents(
-                "https://api.telegram.org/bot{$botToken}/setWebhook",
-                false,
-                $webhookContext
-            );
-            
-            if ($webhookResult === false) {
-                throw new Exception('Не удается установить webhook');
+            try {
+                // Новый способ — через GET-параметр
+                $setWebhookUrl = "https://api.telegram.org/bot{$botToken}/setWebhook?url=" . urlencode($webhookUrl);
+                $webhookResult = @file_get_contents($setWebhookUrl);
+                
+                // Проверка результата
+                if ($webhookResult === false) {
+                    throw new Exception('Не удается установить webhook. Проверьте подключение к интернету и правильность токена.');
+                }
+                
+                $webhookResponse = json_decode($webhookResult, true);
+                if (!$webhookResponse || !isset($webhookResponse['ok'])) {
+                    throw new Exception('Неверный ответ от Telegram API');
+                }
+                
+                if (!$webhookResponse['ok']) {
+                    throw new Exception('Ошибка установки webhook: ' . ($webhookResponse['description'] ?? 'Unknown error'));
+                }
+                
+                // Webhook успешно установлен
+                $webhookStatus = '✅ Webhook успешно установлен';
+                $webhookError = false;
+                
+            } catch (Exception $e) {
+                $webhookStatus = '❌ Ошибка установки webhook: ' . $e->getMessage();
+                $webhookError = true;
             }
-            
-            $webhookResponse = json_decode($webhookResult, true);
-            if (!$webhookResponse['ok']) {
-                throw new Exception('Ошибка установки webhook: ' . ($webhookResponse['description'] ?? 'Unknown error'));
+
+            // Дополнительная проверка webhook статуса
+            try {
+                $getWebhookUrl = "https://api.telegram.org/bot{$botToken}/getWebhookInfo";
+                $webhookInfo = @file_get_contents($getWebhookUrl);
+                
+                if ($webhookInfo !== false) {
+                    $webhookData = json_decode($webhookInfo, true);
+                    if ($webhookData && $webhookData['ok']) {
+                        $currentWebhook = $webhookData['result']['url'];
+                        if ($currentWebhook === $webhookUrl) {
+                            $webhookStatus .= '<br>📍 Текущий webhook: ' . htmlspecialchars($currentWebhook);
+                        } else {
+                            $webhookStatus .= '<br>⚠️ Webhook URL не совпадает с ожидаемым';
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                // Игнорируем ошибки проверки статуса
             }
             
             // Инициализируем базу данных

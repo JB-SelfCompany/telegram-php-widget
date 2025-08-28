@@ -25,14 +25,20 @@ class TelegramBot {
     }
     
     public function handleCommand($command, $fromChatId) {
+        error_log("Processing command: $command from chat: $fromChatId");
+        
         // Обработка команды /accept_X
         if (preg_match('/^\/accept_(\d+)$/', $command, $matches)) {
+            error_log("Accept command matched, chat_id: " . $matches[1]);
+            
             $chatDbId = (int)$matches[1];
             
             // Находим чат по ID (не по session_id!)
             $stmt = $this->db->pdo->prepare("SELECT * FROM chats WHERE id = ?");
             $stmt->execute([$chatDbId]);
             $chat = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            error_log("Chat found: " . json_encode($chat));
             
             if ($chat && $chat['status'] === 'waiting') {
                 // Обновляем статус чата
@@ -46,16 +52,21 @@ class TelegramBot {
                 $message .= "💬 Теперь вы можете отвечать на сообщения клиента.\n";
                 $message .= "❌ Для завершения чата: /close_{$chatDbId}";
                 
-                sendTelegramRequest('sendMessage', [
+                $result = sendTelegramRequest('sendMessage', [
                     'chat_id' => $fromChatId,
                     'text' => $message
                 ]);
+                
+                error_log("Accept response sent: " . json_encode($result));
                 
                 // Уведомляем клиента о подключении оператора
                 $this->db->addMessage($chatDbId, 'system', 'Оператор подключился к чату');
                 
                 return true;
             } else {
+                $errorMsg = $chat ? "Чат уже принят или имеет статус: {$chat['status']}" : "Чат не найден";
+                error_log("Accept failed: $errorMsg");
+                
                 sendTelegramRequest('sendMessage', [
                     'chat_id' => $fromChatId,
                     'text' => "❌ Чат #{$chatDbId} не найден или уже принят"
@@ -66,6 +77,8 @@ class TelegramBot {
         
         // Обработка команды /close_X
         if (preg_match('/^\/close_(\d+)$/', $command, $matches)) {
+            error_log("Close command matched, chat_id: " . $matches[1]);
+            
             $chatDbId = (int)$matches[1];
             
             // Закрываем чат
@@ -84,6 +97,13 @@ class TelegramBot {
             
             return true;
         }
+        
+        // Команда не распознана
+        error_log("Command not recognized: $command");
+        sendTelegramRequest('sendMessage', [
+            'chat_id' => $fromChatId,
+            'text' => "❓ Команда не распознана: $command"
+        ]);
         
         return false;
     }
@@ -111,13 +131,21 @@ class TelegramBot {
         }
     }
     
-    // Сохраняем связь между админом и чатом
     private function setAdminChatMapping($adminChatId, $chatDbId) {
-        $stmt = $this->db->pdo->prepare("
-            INSERT OR REPLACE INTO admin_chat_mapping (admin_chat_id, chat_id, created_at) 
-            VALUES (?, ?, CURRENT_TIMESTAMP)
-        ");
-        $stmt->execute([$adminChatId, $chatDbId]);
+        try {
+            $stmt = $this->db->pdo->prepare("
+                INSERT OR REPLACE INTO admin_chat_mapping (admin_chat_id, chat_id, created_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ");
+            $result = $stmt->execute([$adminChatId, $chatDbId]);
+            
+            error_log("Admin mapping set: admin=$adminChatId, chat=$chatDbId, result=" . ($result ? 'success' : 'failed'));
+            
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Database error in setAdminChatMapping: " . $e->getMessage());
+            return false;
+        }
     }
     
     // Удаляем связь между админом и чатом
@@ -131,16 +159,25 @@ class TelegramBot {
     
     // Получаем активный чат для админа
     private function getActiveChatForAdmin($adminChatId) {
-        $stmt = $this->db->pdo->prepare("
-            SELECT chat_id FROM admin_chat_mapping 
-            WHERE admin_chat_id = ? 
-            ORDER BY created_at DESC 
-            LIMIT 1
-        ");
-        $stmt->execute([$adminChatId]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        return $result ? $result['chat_id'] : null;
+        try {
+            $stmt = $this->db->pdo->prepare("
+                SELECT acm.chat_id, c.status 
+                FROM admin_chat_mapping acm
+                JOIN chats c ON acm.chat_id = c.id
+                WHERE acm.admin_chat_id = ? AND c.status = 'active'
+                ORDER BY acm.created_at DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$adminChatId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            error_log("Active chat for admin $adminChatId: " . json_encode($result));
+            
+            return $result ? $result['chat_id'] : null;
+        } catch (PDOException $e) {
+            error_log("Database error in getActiveChatForAdmin: " . $e->getMessage());
+            return null;
+        }
     }
 }
 ?>
