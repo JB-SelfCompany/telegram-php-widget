@@ -481,6 +481,13 @@ if (defined('BOT_TOKEN') && BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE') {
         .btn-success:hover {
             background: #218838;
         }
+
+        .btn-full-width {
+            grid-column: 1 / -1;
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
         
         .alert {
             padding: 15px;
@@ -758,14 +765,12 @@ if (defined('BOT_TOKEN') && BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE') {
                     <div class="help-text">Базовый URL для API виджета</div>
                 </div>
                 
-                <div class="grid">
-                    <button type="button" id="testWebhookBtn" class="btn btn-secondary">
-                        🧪 Тест Webhook
-                    </button>
-                    <button type="submit" id="setupBtn" class="btn btn-success">
-                        🚀 Установить виджет
-                    </button>
-                </div>
+            <div class="grid">
+                <button type="submit" id="setupBtn" class="btn btn-success btn-full-width">
+                    🚀 Установить виджет
+                </button>
+            </div>
+
             </form>
             
             <div class="instructions">
