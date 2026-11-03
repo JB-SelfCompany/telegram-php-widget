@@ -1,3 +1,5 @@
+** Moved ** development continues at https://git.shd.company/bubblegum/telegram-php-widget. This GitHub copy is archived.
+
 # 💬 Telegram PHP Widget  
 
 [![License: GPLV3](https://img.shields.io/badge/License-GPLV3-green.svg)](#) [![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue)](#) [![Open Source Love](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red.svg)](#) [![Telegram](https://img.shields.io/badge/Telegram-Bot-blue?logo=telegram)](#)
